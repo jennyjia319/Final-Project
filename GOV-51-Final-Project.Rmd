@@ -357,3 +357,14 @@ Overall, these findings are largely surprising, especially given the often-conci
 
 ## Limitations 
 In addressing limitations, my analysis sought to be observational in nature, so no causal interpretation of immigration's role in shaping neighborhood income can be concluded from this study. My model also omits potentially consequential predictors, for example, occupation and different industries. That being said, such specific data is unavailable and is not represented in ACS datasets. Finally, my focus on New York City limits the generalizability of these findings, as other metropolitan areas with distinct immigration and income profiles may yield different results.
+
+# Works Cited
+Albrizio, S. (2024). Shifting perceptions: Unpacking public support for immigrant workers integration in the labor market. IMF Working Paper, 2024(217), 1. https://doi.org/10.5089/9798400290374.001
+
+Center for Migration Studies. (2025). Data Briefing: A Portrait of Immigrant New Yorkers. https://cmsny.org/publications/data-briefing-on-new-york-city-immigrants/
+
+Hainmueller, J., & Hiscox, M. J. (2010). Attitudes toward Highly Skilled and Low-skilled Immigration: Evidence from a Survey Experiment. American Political Science Review, 104(1), 61–84. https://doi.org/10.1017/s0003055409990372
+
+Lin, K., & Weiss, I. (2019). Immigration and the wage distribution in the United States. Demography, 56(6), 2229–2252. https://doi.org/10.1007/s13524-019-00828-9
+
+Peri, G. (2009). The Effect of Immigration on Productivity: Evidence from US States. In National Bureau of Economic Research. https://doi.org/10.3386/w15507
