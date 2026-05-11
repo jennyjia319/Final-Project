@@ -245,7 +245,7 @@ lasso <- cv.glmnet(
 )
 
 lasso_predicted <- predict(
-  cv_lasso,
+  lasso,
   newx = X_test,
   s = "lambda.min"
 )
@@ -310,9 +310,9 @@ rmse_ols <- sqrt(
 comparison_table <- tibble(
   Model = c(
     "OLS (no regularization)",
-    "LASSO (α = 1)",
-    "Ridge (α = 0)",
-    "Elastic Net (α = 0.5)"
+    "LASSO (alpha = 1)",
+    "Ridge (alpha = 0)",
+    "Elastic Net (alpha = 0.5)"
   ),
   `Test RMSE` = c(
     rmse_ols,
