@@ -6,8 +6,66 @@ output: pdf_document
 ---
 
 GitHub Repository: https://github.com/jennyjia319/Final-Project
-
 ```{r}
-
+#| echo: false # hide unncessary outputs
+#| warning: false
+#| message: false
 ```
 
+
+```{r}
+library(tidyverse)
+data <- read.csv("data/GOV 51 Master Dataset.csv")
+```
+
+```{r}
+head(data) # see if csv loaded properly
+```
+
+```{r}
+tract_data <- data |> # ACS csv orientation is weird, so I have to reorient columns and rows
+  rename(variable = 1) |>
+  pivot_longer(
+    cols = -variable,
+    names_to = "tract",
+    values_to = "value"
+  ) |>
+  mutate(
+    variable = str_squish(variable),
+    value = parse_number(as.character(value))
+  ) |>
+  pivot_wider(
+    names_from = variable,
+    values_from = value
+  )
+```
+
+```{r}
+head(tract_data)
+```
+```{r}
+tract_data <- data |> # clean tract names 
+  rename(variable = 1) |>
+  pivot_longer(
+    cols = -variable,
+    names_to = "tract",
+    values_to = "value"
+  ) |>
+  mutate(
+    variable = str_squish(variable),
+    value = parse_number(as.character(value)),
+    tract = str_replace_all(tract, "\\.", " "),
+    tract = str_remove(tract, " Total Estimate$")
+  ) |>
+  pivot_wider(
+    names_from = variable,
+    values_from = value
+  ) |>
+  select(where(~ !all(is.na(.))))
+```
+```{r}
+head(tract_data) # check to see that it worked 
+nrow(tract_data)
+colnames(tract_data)
+```
+# Introduction
