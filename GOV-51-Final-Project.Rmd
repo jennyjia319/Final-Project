@@ -14,6 +14,7 @@ GitHub Repository: https://github.com/jennyjia319/Final-Project
 
 
 ```{r}
+library(knitr)
 library(tidyverse)
 data <- read.csv("data/GOV 51 Master Dataset.csv")
 ```
@@ -69,3 +70,81 @@ nrow(tract_data)
 colnames(tract_data)
 ```
 # Introduction
+Immigration remains one of the most politically contested issues in the United States. Public attitudes toward immigration are often shaped by assumptions about economic contribution, with evidence suggesting that Americans consistently express stronger preferences for highly-skilled immigrants, regardless of their own socioeconomic background (Hainmueller & Hiscox, 2010). What is embedded in these attitudes is the assumption that immigrant presence is closely tied to local economic prosperity.
+
+Existing scholarship has explored the economic consequences of immigration from multiple angles. Peri (2009) finds that immigration can increase productivity and income per worker, while Lin and Weiss (2019) show that these effects are unevenly distributed, with gains concentrated among higher-income groups. Albrizio (2024) further demonstrates that perceptions of immigrant economic contribution often diverge from empirical reality. Yet, despite such substantial literature, most studies focus on estimating immigration’s economic effects rather than asking whether immigrant presence itself can be used as a predictor of neighborhood-level economic conditions. This opens the door to an unexplored puzzle. If immigration shapes local labor markets and economic opportunity, can the share of foreign-born residents help predict neighborhood wealth?
+
+New York City offers an ideal setting for this question. As one of the most immigrant-dense cities in the United States, with roughly 38% of residents being foreign-born, NYC exhibits substantial variation in both immigrant concentration and median household income across all census tracts. It also contains neighborhoods associated with both high-income, highly educated immigrant communities and lower-income immigrant enclaves, making it a very ideal setting to test predictive relationships.
+
+My project thus asks: Can we predict median household income across census tracts in New York City based on share of foreign-born residents?
+
+This is a predictive observational study, it is not causal. The objective is to assess whether observable demographic characteristics, especially immigrant concentration, can improve tract-level prediction of household income. I find that, while foreign-born share carries predictive information, educational attainment is by far the strongest predictor of neighborhood income.
+
+# Data 
+My analysis draws from tract-level data from the 2025 American Community Survey (ACS), combining estimates from the S1903 income dataset and the DP02 selected social characteristics dataset. These sources were merged by census tract identifier to create a unified tract-level dataset for New York City.
+
+The unit of observation is each census tract that is counted as New York City. After combining and cleaning the ACS data, the dataset contains 2,328 census tracts spanning all five boroughs: the Bronx, Brooklyn, Manhattan, Queens, and Staten Island.
+
+The outcome variable is median household income. The primary predictor of interest is the percentage of foreign-born residents in each tract. Additional covariates include educational attainment, gender composition, race, age, and total population. Because education is strongly associated with income and may confound the relationship between immigrant concentration and neighborhood wealth, I include a measure of the percentage of residents with at least a bachelor’s degree (so % college-educated includes Bachelor's and Graduate degrees). 
+
+## Data Summary Table
+### Figure 1: Summary Statistics for NYC Census Tracts
+
+```{r}
+data_summary <- tract_data |>
+  mutate(
+    `College educated (%)` = `Bachelor's degree` + `Graduate or professional degree`
+  ) |>
+  select(
+    `Median income (dollars)`,
+    `Foreign-born`,
+    `College educated (%)`,
+    `Male`,
+    `Total population`
+  ) |>
+  summarise(
+    across(
+      everything(),
+      list(
+        Mean = ~mean(.x, na.rm = TRUE),
+        SD = ~sd(.x, na.rm = TRUE),
+        Min = ~min(.x, na.rm = TRUE),
+        Max = ~max(.x, na.rm = TRUE)
+      ),
+      .names = "{.col}__{.fn}"
+    )
+  ) |>
+  pivot_longer(
+    everything(),
+    names_to = c("Variable", ".value"),
+    names_pattern = "(.+)__(.+)"
+  )
+
+data_summary |>
+  kable(
+    digits = 1,
+    caption = "Summary Statistics for NYC Census Tracts"
+  )
+```
+# Analysis 
+I begin with descriptive analysis by visualizing the relationship between immigrant concentration and median household income across census tracts. This provides an initial assessment of the direction, strength, and heterogeneity of the possible association.
+
+I then create and use an ordinary least squares (OLS) regression model as an interpretative predictive baseline. Even though my research question is predictive, OLS allows straightforward preliminary interpretation of how tract-level characteristics are associated with income while controlling for potential confounders.
+
+Since predictive performance rather than causal inference is my primary objective, I also estimate a LASSO regression model. LASSO introduces coefficient penalization to reduce overfitting and identify which predictors retain the strongest predictive value. Model performance is evaluated using an 80/20 train-test split and out-of-sample root mean squared error (RMSE).
+
+### Figure 2: Scatterplot
+```{r}
+ggplot(
+  tract_data |> filter(!is.na(`Foreign-born`), !is.na(`Median income (dollars)`)),
+  aes(x = `Foreign-born`, y = `Median income (dollars)`)
+) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "lightblue") +
+  labs(
+    title = "Foreign-Born and Median Household Income Across NYC Census Tracts",
+    x = "Percent Foreign-Born",
+    y = "Median Household Income ($)"
+  )
+```
+Figure 2 depicts substantial variation in tract-level income outcomes, along with a negative relationship between immigrant concentration and median household income.
