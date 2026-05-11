@@ -3,25 +3,24 @@ title: "GOV-51-Final-Project"
 author: "Jenny Jia"
 date: "2026-05-11"
 output: pdf_document
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
 GitHub Repository: https://github.com/jennyjia319/Final-Project
-```{r}
-#| echo: false # hide unncessary outputs
-#| warning: false
-#| message: false
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-
+# Setup
 ```{r}
-library(knitr)
+library(knitr) # load packages
 library(tidyverse)
 library(glmnet)
 data <- read.csv("data/GOV 51 Master Dataset.csv")
-```
-
-```{r}
-head(data) # see if csv loaded properly
 ```
 
 ```{r}
@@ -42,10 +41,7 @@ tract_data <- data |> # ACS csv orientation is weird, so I have to reorient colu
   )
 ```
 
-```{r}
-head(tract_data)
-```
-```{r}
+```{r, warning=FALSE}
 tract_data <- data |> # clean tract names 
   rename(variable = 1) |>
   pivot_longer(
@@ -65,10 +61,10 @@ tract_data <- data |> # clean tract names
   ) |>
   select(where(~ !all(is.na(.))))
 ```
+
 ```{r}
 head(tract_data) # check to see that it worked 
 nrow(tract_data)
-colnames(tract_data)
 ```
 
 # Introduction
@@ -130,12 +126,12 @@ data_summary |>
 ```
 Table 1 shows substantial socioeconomic variation across New York City census tracts, with median household income ranging from roughly 4,930 to 215,581 dollars, highlighting the variation amongst different census tracts in the city. The percentage of foreign-born residents also varies widely, from 0% to 93.3%, while college educational attainment ranges from nearly zero to unanimous attainment, suggesting both may significantly shape local income patterns. By contrast, gender composition is relatively similar across tracts, which means it could serve as a weaker predictor down the line. 
 
-# Analysis 
-I begin with descriptive analysis by visualizing the relationship between immigrant concentration and median household income across census tracts. This provides an initial assessment of the direction, strength, and heterogeneity of the possible association.
+# Analysis
+I begin with descriptive analysis by visualizing the relationship between immigrant concentration and median household income across census tracts. This provides an initial assessment of the direction, strength, and heterogeneity of the possible association, while also allowing for the identification of potential outliers or non-linear patterns that may shape modeling decisions later now. 
 
-I then create and use an ordinary least squares (OLS) regression model as an interpretative predictive baseline. Even though my research question is predictive, OLS allows straightforward preliminary interpretation of how tract-level characteristics are associated with income while controlling for potential confounders.
+I then create and use an ordinary least squares (OLS) regression model as an interpretative predictive baseline. Even though my research question is predictive, OLS allows for preliminary interpretation of how tract-level characteristics are associated with income while controlling for potential confounders. In selecting predictors, I sought to include variables that are both  relevant to neighborhood-level income variation and plausibly associated with immigrant concentration. Educational attainment, measured through bachelor’s and graduate degree attainment, is included because education is one of the strongest known predictors of earnings and socioeconomic mobility. Median age is included to account for differences in earning potential across neighborhoods, as areas with older working-age populations may yield higher incomes. Gender is also included, since labor force participation and earnings may differ across tract populations. Finally, racial demographic composition is incorporated through Black and Asian population shares, as racial and ethnic residential in New York City is closely intertwined with geography and could otherwise confound the observed relationship between immigrant concentration and income.
 
-Since predictiveness is my main objective, I also employ three predict tools, those being LASSO, Ridge, and Elastic Net. These approaches introduce  penalization to reduce overfitting and improve out-of-sample prediction, but differ in how they treat predictors. Model performance is evaluated using an 80/20 train-test split and out-of-sample root mean squared error RMSE.
+Since predictiveness is my main objective, I also employ three predictive tools, those being LASSO, Ridge, and Elastic Net. These approaches introduce penalization to reduce overfitting and improve out-of-sample prediction, but differ in how they treat predictors. LASSO performs variable selection by shrinking weaker coefficients toward zero, Ridge shrinks all coefficients without eliminating predictors, and Elastic Net combines both approaches to balance variable selection with coefficient stability. These models are particularly useful for assessing whether predictive performance improves when complexity is penalized rather than relying solely on an unregularized linear model. Model performance is evaluated using an 80/20 train-test split and out-of-sample root mean squared error RMSE.
 
 ## Descriptive Visualization
 ### Figure 1: Scatterplot
@@ -147,7 +143,7 @@ ggplot(
   geom_point(alpha = 0.3) +
   geom_smooth(method = "lm", color = "lightblue") +
   labs(
-    title = "Foreign-Born and Median Household Income Across NYC Census Tracts",
+    title = "Foreign-Born and Median Household Income Across NYC Tracts",
     x = "Percent Foreign-Born",
     y = "Median Household Income ($)"
   )
@@ -155,7 +151,9 @@ ggplot(
 Figure 1 depicts substantial variation in tract-level income outcomes, along with a negative relationship between immigrant concentration and median household income.
 
 ## OLS Model
-### Table 2: OLS
+The OLS model act as a baseline for understanding how selected tract-level demographic and socioeconomic characteristics are associated with median household income. Educational attainment emerges as the strongest predictor, with both bachelor’s and graduate/professional degree attainment showing large, highly statistically significant positive associations with income. Meanwhile, the percentage of foreign-born residents is not statistically significant once other neighborhood characteristics are accounted for, suggesting that immigrant concentration alone is not an independent predictor of tract-level income. The model explains a substantial proportion of variation in neighborhood income where R² = 0.72, indicating strong baseline predictive performance.
+
+### OLS Estimates
 ```{r}
 ols <- lm(
   `Median income (dollars)` ~
@@ -171,7 +169,7 @@ ols <- lm(
 
 summary(ols)
 ```
-In the OLS model depicted in Table 2, the coefficient on foreign-born share is negative but not statistically significant. What this suggests is that the negative relationship between immigrant concentration and income we found earlier is partly explained by other tract-level characteristics, especially educational attainment. On the other hand, education remains a strong predictor, where a one percentage point increase in bachelor’s degree share is associated with approximately 766 dollars higher median household income, while a one percentage point increase in graduate/professional degree share is associated with approximately 1,214 dollar higher median household income, holding other variables constant.
+In the OLS model above, the coefficient on foreign-born share is negative but not statistically significant. What this suggests is that the negative relationship between immigrant concentration and income we found earlier is partly explained by other tract-level characteristics, especially educational attainment. On the other hand, education remains a strong predictor, where a one percentage point increase in bachelor’s degree share is associated with approximately 766 dollars higher median household income, while a one percentage point increase in graduate/professional degree share is associated with approximately 1,214 dollar higher median household income, holding other variables constant.
 
 ## Penalized Predictive Models 
 While OLS provides an easily interpretable benchmark, predictive modeling prioritizes out-of-sample performance that can help reduce overfitting. So, they would therefore better suited for evaluating predictive accuracy. I compare LASSO, Ridge, and Elastic Net to assess whether penalization improves tract-level income prediction relative to the OLS baseline.
@@ -206,8 +204,10 @@ train_index <- sample(
 train <- model_data[train_index, ]
 test <- model_data[-train_index, ]
 ```
+An 80/20 train-test split is employed to evaluate how well the predictive models apply to unseen data rather than simply fitting the observed sample. By training the models on 80 percent of the census tracts and testing performance on the remaining 20 percent, I can assess out-of-sample predictive accuracy and reduce the risk of overstating model performance due to overfitting. This is particularly important given that the primary objective of this study is prediction rather than interpreting the coefficients alone.
 
 ### 3. Design
+This step prepares the inputs needed for the penalized regression models. X_train and X_test hold the tract-level predictors I am using to estimate income, and y_train and y_test contain the corresponding median household income values. I convert the predictors into matrix form because glmnet requires numeric matrices and not the syntax used in regular R. 
 ```{r}
 X_train <- model.matrix(
   `Median income (dollars)` ~
@@ -237,6 +237,7 @@ y_test <- test$`Median income (dollars)`
 ```
 
 ### 4. LASSO
+In the following sections, I perform cross-validated penalized modelling with LASSO, Ridge, and Elastic Net:
 ```{r}
 lasso <- cv.glmnet(
   X_train,
@@ -294,6 +295,7 @@ rmse_elastic <- sqrt(
 ```
 
 ### 7. OLS RMSE
+This critical step calculates the out-of-sample predictive error MSE for the OLS model using the same test dataset as the penalized approaches. By generating predictions for unseen census tracts and comparing them to the observed median household income values, I compute the RMSE as a measure of predictive performance. This allows for a direct comparison between the unregularized OLS model and the penalized alternatives to see which approach produces the most accurate predictions for tract-level median household income.
 ```{r}
 ols_predicted <- predict(
   ols,
@@ -305,7 +307,7 @@ rmse_ols <- sqrt(
 )
 ```
 
-### 8. Table 3: Comparison Table
+### 8. Table 2: Comparison Table
 ```{r}
 comparison_table <- tibble(
   Model = c(
@@ -328,14 +330,16 @@ comparison_table |>
     caption = "Out-of-sample Prediction Performance: OLS vs Penalized Approaches"
   )
 ```
-Table 3 compares out-of-sample predictive performance in both OLS and penalized predictive approaches. Surprisingly, what we find is that the OLS model produces the lowest test RMSE (14,591.5), outperforming LASSO (14,798.3), Elastic Net (14,797.4), and Ridge (14,907.6). This suggests that regularization does not improve predictive accuracy in this case, mostly likely because the model includes a relatively small number of relevant predictors and does not appear to suffer from severe overfitting or noise. 
+Table 2 compares out-of-sample predictive performance in both OLS and penalized predictive approaches. Surprisingly, what we find is that the OLS model produces the lowest test RMSE (14,591.5), outperforming LASSO (14,798.3), Elastic Net (14,797.4), and Ridge (14,907.6). This suggests that regularization does not improve predictive accuracy in this case, mostly likely because the model includes a relatively small number of relevant predictors and does not appear to suffer from severe overfitting or noise. 
 
 ### 9. Figure 2: Comparing Penalized Approaches
 ```{r}
 plot(log(lasso$lambda), lasso$cvm, type = "l",
      xlab = "log(Lambda)",
      ylab = "Cross-Validated MSE",
-     col = "lightblue")
+     col = "lightblue",
+     main = "Cross-Validated MSE Amongst LASSO, Ridge, & Elastic Net"
+)
 
 lines(log(ridge$lambda), ridge$cvm, col = "darkblue")
 lines(log(elastic$lambda), elastic$cvm, col = "lightpink")
@@ -347,7 +351,7 @@ legend("topright",
 ```
 Figure 2 compares MSE across LASSO, Ridge, and Elastic net models as the  penalty increases. At lower penalty values, all three models exhibit very similar predictive performance, suggesting that penalization has limited effect when coefficient shrinkage is modest. As the penalty increases, however, prediction error rises sharply, especially for LASSO and elastic net. This means  that excessive regularization removes too much predictive power and worsens model performance. Ridge remains relatively more stable under stronger penalization, though Table 3 from above shows that none of the penalized approaches actually outperform the simpler OLS benchmark in out-of-sample prediction.
 
-# Conclusionn & Limitations
+# Conclusion & Limitations
 ## Conclusion
 My study investigated whether immigrant concentration serves as a meaningful predictor of median household income across New York City census tracts. Descriptive analysis initially pointed to a negative relationship between foreign-born share and neighborhood income, however, this association dimmed considerably once tract-level socioeconomic and demographic controls were introduced. Within the expanded OLS model, immigrant concentration lost its statistical significance as an independent predictor, while educational attainment emerged as the dominant driver of income variation at the tract level.
 
@@ -356,7 +360,7 @@ Thinking about this predictively, my results point to the fact that, rather than
 Overall, these findings are largely surprising, especially given the often-concieved notion that urban immigrants tend to take higher-income jobs. If anything, my results suggest that this narrative may be more of a myth than reality, at least at the neighborhood level in NYC. It is possible that, while some immigrant groups do enter high-wage sectors, the tract-level indication of that fact is diluted by the diversity within the foreign-born population itself, which might mask any high income that might exist at the individual level.
 
 ## Limitations 
-In addressing limitations, my analysis sought to be observational in nature, so no causal interpretation of immigration's role in shaping neighborhood income can be concluded from this study. My model also omits potentially consequential predictors, for example, occupation and different industries. That being said, such specific data is unavailable and is not represented in ACS datasets. Finally, my focus on New York City limits the generalizability of these findings, as other metropolitan areas with distinct immigration and income profiles may yield different results.
+In addressing limitations, my analysis sought to be observational in nature, so no causal interpretation of immigration’s role in shaping neighborhood income can be concluded from this study. While the models identify associations and predictive relationships between tract-level characteristics and median household income, they cannot determine whether immigrant concentration itself directly influences economic outcomes, particularly given the possibility of unobserved confounding variables. My model also omits potentially consequential predictors, for example, occupation, industry composition, and housing market dynamics, all of which may meaningfully shape neighborhood income patterns. That being said, such specific data is either unavailable or not consistently represented in the ACS datasets that are available to the public. Finally, my focus on New York City limits the generalizability of these findings, as other metropolitan areas with distinct immigration compositions, labor market structures, and socioeconomic profiles may yield different predictive relationships.
 
 # Works Cited
 Albrizio, S. (2024). Shifting perceptions: Unpacking public support for immigrant workers integration in the labor market. IMF Working Paper, 2024(217), 1. https://doi.org/10.5089/9798400290374.001
